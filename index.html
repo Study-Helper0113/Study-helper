@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>讀書助手 - 雲端同步版</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root { --primary: #5dade2; --secondary: #f39c12; --danger: #e74c3c; --success: #27ae60; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333; --input-bg: #2a2a2a; }
+        body.light-mode { --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; --border: #ddd; --input-bg: #f9f9f9; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); max-width: 500px; margin: auto; padding: 15px; }
+        .container { background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { border-left: 4px solid var(--primary); padding-left: 10px; font-size: 1.1rem; margin: 20px 0 10px; color: var(--primary); }
+        .input-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        input, select { padding: 8px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 5px; color: var(--text); flex: 1; outline: none; }
+        button { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .timer-display { font-size: 3rem; text-align: center; font-family: monospace; font-weight: bold; margin: 15px 0; color: var(--primary); }
+        .list-container { border: 1px solid var(--border); border-radius: 8px; background: rgba(0,0,0,0.1); margin-bottom: 15px; overflow: hidden; }
+        .sync-status { font-size: 0.7rem; text-align: center; color: #888; margin-bottom: 5px; }
+        .item { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .tag { background: var(--primary); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .del-btn { cursor: pointer; color: #e74c3c; font-weight: bold; margin-left: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="syncStatus" class="sync-status">📡 正在連接雲端資料庫...</div>
+    
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="font-size:1.2rem; margin:0; color:var(--primary);">讀書助手 Cloud Pro</h1>
+        <button onclick="document.body.classList.toggle('light-mode')" style="font-size:0.7rem; background:#444; color:#fff;">🌓 模式</button>
+    </div>
+
+    <h2>📅 倒數日</h2>
+    <div class="input-group">
+        <input type="text" id="evName" placeholder="考試名稱">
+        <input type="date" id="evDate">
+        <button style="background:var(--primary); color:#000" onclick="addEv()">新增</button>
+    </div>
+    <div id="evList" class="list-container"></div>
+
+    <h2>⏱️ 專注計時器</h2>
+    <div class="timer-display" id="tDisp">00:00:00</div>
+    <div class="input-group">
+        <input type="text" id="subj" placeholder="科目" value="自主學習">
+        <button id="sBtn" onclick="toggleTimer()" style="background:var(--success); color:white; flex:2;">開始</button>
+        <button onclick="manualSave()" style="background:var(--secondary); color:white; flex:1;">儲存</button>
+        <button onclick="resetTimer()" style="background:#666; color:white; flex:1;">重設</button>
+    </div>
+
+    <h2>📜 最近紀錄</h2>
+    <div id="logList" class="list-container"></div>
+</div>
+
+<script>
+    // 你的專屬 Firebase 配置
+    const firebaseConfig = {
+        apiKey: "AIzaSyAFgzkCDZLmrCQJ0h7NGl17S_d9joRZoPY",
+        authDomain: "study-helper-d6815.firebaseapp.com",
+        databaseURL: "https://study-helper-d6815-default-rtdb.firebaseio.com",
+        projectId: "study-helper-d6815",
+        storageBucket: "study-helper-d6815.firebasestorage.app",
+        messagingSenderId: "908760745582",
+        appId: "1:908760745582:web:2ead8ee0fdac19cd9f487f"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let state = { evs: [], logs: [], sec: 0, running: false, timer: null };
+
+    // 從雲端即時載入資料
+    function loadData() {
+        db.ref('study_data').on('value', (snap) => {
+            const data = snap.val();
+            if (data) {
+                state.evs = data.evs || [];
+                state.logs = data.logs || [];
+                render();
+            }
+            document.getElementById('syncStatus').innerText = "☁️ 雲端同步中 (即時更新)";
+        }, (error) => {
+            document.getElementById('syncStatus').innerText = "❌ 同步錯誤: " + error.message;
+        });
+    }
+
+    // 將資料同步至雲端
+    function sync() {
+        document.getElementById('syncStatus').innerText = "🔄 正在上傳資料...";
+        db.ref('study_data').set({
+            evs: state.evs,
+            logs: state.logs
+        });
+    }
+
+    function render() {
+        const today = new Date().setHours(0,0,0,0);
+        document.getElementById('evList').innerHTML = state.evs.map(ev => {
+            const diff = Math.ceil((new Date(ev.d)-today)/86400000);
+            return `<div class="item"><span>${ev.n}</span><span>剩 ${diff} 天 <span class="del-btn" onclick="delEv(${ev.id})">✕</span></span></div>`;
+        }).join('') || '<div style="padding:15px; text-align:center; color:#666;">無倒數項目</div>';
+
+        document.getElementById('logList').innerHTML = state.logs.slice(0,10).map(l => `
+            <div class="item">
+                <span><span class="tag">${l.subject}</span> ${Math.floor(l.duration/60)}m ${l.duration%60}s</span>
+                <span class="del-btn" onclick="delLog(${l.id})">✕</span>
+            </div>
+        `).join('') || '<div style="padding:15px; text-align:center; color:#666;">無讀書紀錄</div>';
+    }
+
+    function addEv() {
+        const n = document.getElementById('evName').value, d = document.getElementById('evDate').value;
+        if(n && d) { state.evs.push({id:Date.now(), n, d}); sync(); }
+    }
+
+    function delEv(id) { state.evs = state.evs.filter(e => e.id !== id); sync(); }
+    function delLog(id) { state.logs = state.logs.filter(l => l.id !== id); sync(); }
+
+    function toggleTimer() {
+        if (state.running) {
+            clearInterval(state.timer); state.running = false;
+            document.getElementById('sBtn').innerText = "開始";
+        } else {
+            state.running = true;
+            document.getElementById('sBtn').innerText = "暫停";
+            state.timer = setInterval(() => {
+                state.sec++;
+                const h = Math.floor(state.sec/3600), m = Math.floor((state.sec%3600)/60), s = state.sec%60;
+                document.getElementById('tDisp').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            }, 1000);
+        }
+    }
+
+    function manualSave() {
+        if(state.sec > 0) {
+            state.logs.unshift({id:Date.now(), subject:document.getElementById('subj').value, duration:state.sec, ts:Date.now()});
+            state.sec = 0; clearInterval(state.timer); state.running = false;
+            document.getElementById('tDisp').innerText = "00:00:00";
+            document.getElementById('sBtn').innerText = "開始";
+            sync();
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(state.timer); state.sec = 0; state.running = false;
+        document.getElementById('tDisp').innerText = "00:00:00";
+        document.getElementById('sBtn').innerText = "開始";
+    }
+
+    loadData();
+</script>
+</body>
+</html>
