@@ -2,7 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>讀書助手 - 專屬雲端旗艦版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Helper - V14.1 Global</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
@@ -10,68 +11,86 @@
         body.light-mode { --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; --border: #ddd; --input-bg: #f9f9f9; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); max-width: 500px; margin: auto; padding: 15px; transition: 0.3s; }
         .container { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .user-id-tag { font-size: 0.7rem; background: #333; color: var(--primary); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--primary); }
-        h2 { border-left: 5px solid var(--primary); padding-left: 10px; font-size: 1.1rem; margin: 20px 0 10px; color: var(--primary); }
+        .user-badge { font-size: 0.7rem; background: rgba(93, 173, 226, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--primary); }
+        h1.main-title { text-align: center; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; margin: 15px 0; color: var(--primary); text-shadow: 0 0 10px rgba(93,173,226,0.3); }
+        h2 { border-left: 5px solid var(--primary); padding-left: 10px; font-size: 1.1rem; margin: 25px 0 10px; color: var(--primary); }
         .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
-        input { padding: 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); flex: 1; outline: none; }
+        input, select { padding: 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); outline: none; flex: 1; }
         button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .timer-box { text-align: center; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
-        .timer-display { font-size: 3.5rem; font-family: monospace; font-weight: bold; margin: 10px 0; color: var(--primary); }
-        .sub-btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center; }
-        .sub-tag { display: flex; align-items: center; background: #333; color: #eee; border-radius: 20px; padding: 2px 12px; font-size: 0.8rem; cursor: pointer; border: 1px solid transparent; }
-        .sub-tag:hover { border-color: var(--primary); }
-        .sub-del { margin-left: 8px; color: var(--danger); font-weight: bold; font-size: 1.1rem; }
-        .list-container { border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.2); margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
-        .item { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
-        .tag { background: var(--primary); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        button:active { transform: scale(0.95); }
+        .timer-display { font-size: 3.5rem; font-family: monospace; font-weight: bold; margin: 10px 0; color: var(--primary); text-align: center; }
+        .list-container { border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.1); margin-bottom: 15px; max-height: 250px; overflow-y: auto; }
+        .item { padding: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .goal-item { background: rgba(255,255,255,0.05); margin-bottom: 8px; padding: 10px; border-radius: 8px; border-left: 3px solid var(--secondary); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
+        .sub-tag { display: flex; align-items: center; background: #333; color: #eee; border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; cursor: pointer; margin: 4px; border: 1px solid transparent; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="user-info">
-        <span id="userTag" class="user-id-tag">🔑 空間載入中...</span>
-        <button onclick="document.body.classList.toggle('light-mode')" style="font-size:0.7rem; background:#444; color:#fff;">🌓 模式</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+        <span id="userTag" class="user-badge">🔑 ID: ...</span>
+        <div style="display:flex; gap:5px;">
+            <button id="langBtn" onclick="toggleLang()" style="font-size:0.7rem; background:#444; color:#fff; padding:4px 8px;">🌐 EN/TW</button>
+            <button onclick="document.body.classList.toggle('light-mode')" style="font-size:0.7rem; background:#444; color:#fff; padding:4px 8px;">🌓</button>
+        </div>
     </div>
-    
-    <h1 style="font-size:1.3rem; margin:0; color:var(--primary);">讀書助手 Cloud Pro</h1>
 
-    <h2>📅 考試倒數</h2>
+    <h1 class="main-title">Study Helper</h1>
+
+    <h2 id="title_exams">📅 考試倒數</h2>
     <div class="input-group">
         <input type="text" id="evName" placeholder="考試名稱">
         <input type="date" id="evDate">
-        <button style="background:var(--primary); color:#000" onclick="addEv()">新增</button>
+        <button style="background:var(--primary); color:#000" onclick="addEv()" id="btn_add_ev">新增</button>
     </div>
     <div id="evList" class="list-container"></div>
 
-    <h2>⏱️ 專注計時</h2>
-    <div class="timer-box">
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
+    <h2 id="title_goals">🎯 週科目目標</h2>
+    <div class="input-group">
+        <select id="goalSubSelect"></select>
+        <input type="number" id="goalHourInput" placeholder="小時">
+        <button style="background:var(--secondary); color:#fff" onclick="addGoal()" id="btn_set_goal">設定</button>
+    </div>
+    <div id="goalList" class="list-container" style="max-height: 150px;"></div>
+
+    <h2 id="title_timer">⏱️ 專注計時</h2>
+    <div style="text-align:center; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid var(--border);">
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
             <button id="mStudy" style="flex:1; background:var(--primary); color:#000;" onclick="setMode('study')">普通計時</button>
             <button id="mPomo" style="flex:1; background:#444; color:#fff;" onclick="setMode('pomo')">番茄鐘</button>
         </div>
         <div class="timer-display" id="tDisp">00:00:00</div>
         
-        <div id="pomoSet" style="display:none; margin-bottom:15px; font-size:0.8rem;">
-            專注 <input type="number" id="pMin" value="25" style="width:45px;"> 分 | 
-            休息 <input type="number" id="rMin" value="5" style="width:45px;"> 分
+        <div id="pomoSet" style="display:none; margin-bottom:10px; font-size:0.8rem;">
+            <span id="txt_focus">專注</span> <input type="number" id="pMin" value="25" style="width:45px;" oninput="syncPomoInput()"> 
+            <span id="txt_min">分</span> | 
+            <span id="txt_rest">休息</span> <input type="number" id="rMin" value="5" style="width:45px;" oninput="syncPomoInput()"> 
+            <span id="txt_min2">分</span>
         </div>
 
-        <div class="sub-btn-group" id="subGroup"></div>
-        <div class="input-group" style="margin-bottom:15px;">
-            <input type="text" id="newSubName" placeholder="新增自定義科目...">
+        <div id="subGroup" style="display:flex; flex-wrap:wrap; justify-content:center; margin-bottom:10px;"></div>
+        <div class="input-group">
+            <input type="text" id="newSubName" placeholder="新增自訂科目...">
             <button onclick="addSub()" style="background:#555; color:white;">＋</button>
         </div>
-
         <div class="input-group">
-            <input type="text" id="subj" value="自主學習">
-            <button id="sBtn" onclick="toggleTimer()" style="background:var(--success); color:white; flex:2;">開始</button>
-            <button onclick="manualSave()" style="background:var(--secondary); color:white; flex:1;">儲存</button>
+            <input type="text" id="subj" value="自主學習" style="flex:1;">
+            <button id="sBtn" onclick="toggleTimer()" style="background:var(--success); color:white; flex:1;">開始</button>
+            <button onclick="manualSave()" style="background:var(--secondary); color:white; flex:1;" id="btn_save">儲存</button>
+            <button onclick="resetTimer()" style="background:var(--danger); color:white; flex:1;" id="btn_reset">重設</button>
         </div>
     </div>
 
-    <h2>📊 學習紀錄</h2>
+    <h2 id="title_stats">📈 本週數據統計</h2>
+    <table>
+        <thead><tr id="table_head"><th>科目</th><th>時數</th><th>占比</th></tr></thead>
+        <tbody id="statBody"></tbody>
+    </table>
+
+    <h2 id="title_logs">📊 學習紀錄 (全部)</h2>
     <div id="logList" class="list-container"></div>
 </div>
 
@@ -85,55 +104,62 @@
         messagingSenderId: "908760745582",
         appId: "1:908760745582:web:2ead8ee0fdac19cd9f487f"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const userID = new URLSearchParams(window.location.search).get('id') || "public_space";
+    
+    let state = { evs: [], logs: [], subs: [], goals: [], sec: 0, running: false, timer: null, mode: 'study', isRest: false, pomoInitialSec: 0, lang: 'tw' };
 
-    // 取得網址 ID
-    const urlParams = new URLSearchParams(window.location.search);
-    let userID = urlParams.get('id') || "public_space";
-    document.getElementById('userTag').innerText = "🔑 空間 ID: " + userID;
-
-    let state = {
-        evs: [], logs: [], subs: ["自主學習", "數學", "英文"],
-        sec: 0, running: false, timer: null, mode: 'study', isRest: false, totalSetSec: 0
+    const i18n = {
+        tw: {
+            title_exams: "📅 考試倒數", btn_add_ev: "新增", ev_placeholder: "考試名稱",
+            title_goals: "🎯 週科目目標", btn_set_goal: "設定", goal_hr_placeholder: "小時",
+            title_timer: "⏱️ 專注計時", mStudy: "普通計時", mPomo: "番茄鐘",
+            txt_focus: "專注", txt_rest: "休息", txt_min: "分", txt_min2: "分",
+            btn_save: "儲存", btn_reset: "重設", sBtn: "開始", sBtn_pause: "暫停", sBtn_cont: "繼續",
+            title_stats: "📈 本週數據統計", table_head: "<th>科目</th><th>時數</th><th>占比</th>",
+            title_logs: "📊 學習紀錄 (全部)", sub_placeholder: "新增科目...", subj_default: "自主學習",
+            done: "已讀", remain: "剩餘", left: "剩", day: "天", no_data: "尚無數據"
+        },
+        en: {
+            title_exams: "📅 Exam Countdown", btn_add_ev: "Add", ev_placeholder: "Exam Name",
+            title_goals: "🎯 Weekly Goals", btn_set_goal: "Set", goal_hr_placeholder: "Hrs",
+            title_timer: "⏱️ Focus Timer", mStudy: "Stopwatch", mPomo: "Pomodoro",
+            txt_focus: "Focus", txt_rest: "Rest", txt_min: "m", txt_min2: "m",
+            btn_save: "Save", btn_reset: "Reset", sBtn: "Start", sBtn_pause: "Pause", sBtn_cont: "Resume",
+            title_stats: "📈 Weekly Stats", table_head: "<th>Subject</th><th>Time</th><th>%</th>",
+            title_logs: "📊 Study Logs (All)", sub_placeholder: "Add subject...", subj_default: "Self-study",
+            done: "Done", remain: "Remain", left: "", day: "d left", no_data: "No data"
+        }
     };
 
+    function toggleLang() {
+        state.lang = state.lang === 'tw' ? 'en' : 'tw';
+        render();
+        sync();
+    }
+
     function loadData() {
-        db.ref('users_data/' + userID).on('value', (snap) => {
+        db.ref('users_v14_1/' + userID).on('value', (snap) => {
             const data = snap.val();
             if (data) {
-                state.evs = data.evs || [];
-                state.logs = data.logs || [];
-                state.subs = data.subs || ["自主學習", "數學", "英文"];
+                state.evs = data.evs || []; state.logs = data.logs || []; state.subs = data.subs || []; 
+                state.goals = data.goals || []; state.lang = data.lang || 'tw';
                 render();
-            }
+            } else { render(); }
         });
     }
 
-    function sync() {
-        db.ref('users_data/' + userID).set({
-            evs: state.evs, logs: state.logs, subs: state.subs
-        });
+    function sync() { db.ref('users_v14_1/' + userID).set(state); }
+
+    function syncPomoInput() {
+        if (state.running) return;
+        const min = state.isRest ? document.getElementById('rMin').value : document.getElementById('pMin').value;
+        state.pomoInitialSec = min * 60;
+        state.sec = state.pomoInitialSec;
+        updateDisplay();
     }
 
-    // 科目管理
-    function addSub() {
-        const name = document.getElementById('newSubName').value.trim();
-        if(name && !state.subs.includes(name)) {
-            state.subs.push(name);
-            document.getElementById('newSubName').value = '';
-            sync();
-        }
-    }
-    function delSub(name) {
-        if(confirm(`刪除「${name}」？`)) {
-            state.subs = state.subs.filter(s => s !== name);
-            sync();
-        }
-    }
-
-    // 計時邏輯
     function setMode(m) {
         if (state.running) return;
         state.mode = m;
@@ -144,38 +170,52 @@
     }
 
     function toggleTimer() {
+        const t = i18n[state.lang];
         if (state.running) {
             clearInterval(state.timer); state.running = false;
-            document.getElementById('sBtn').innerText = "繼續";
+            document.getElementById('sBtn').innerText = t.sBtn_cont;
         } else {
-            if (state.mode === 'pomo' && state.sec === 0) {
-                state.totalSetSec = document.getElementById('pMin').value * 60;
-                state.sec = state.totalSetSec;
-            }
+            if (state.mode === 'pomo' && (state.sec === 0 || state.pomoInitialSec === 0)) syncPomoInput();
             state.running = true;
-            document.getElementById('sBtn').innerText = "暫停";
+            document.getElementById('sBtn').innerText = t.sBtn_pause;
             state.timer = setInterval(tick, 1000);
         }
     }
 
     function tick() {
-        if (state.mode === 'study') state.sec++;
+        if (state.mode === 'study') { state.sec++; } 
         else {
             state.sec--;
             if (state.sec <= 0) {
                 clearInterval(state.timer); state.running = false;
-                alert(state.isRest ? "休息結束！" : "專注結束！");
-                if (!state.isRest) {
-                    state.logs.unshift({id:Date.now(), subject:document.getElementById('subj').value, duration:state.totalSetSec});
-                    sync();
-                }
+                if (!state.isRest) { saveRecord(state.pomoInitialSec); alert("Done!"); }
                 state.isRest = !state.isRest;
-                state.totalSetSec = (state.isRest ? document.getElementById('rMin').value : document.getElementById('pMin').value) * 60;
-                state.sec = state.totalSetSec;
-                document.getElementById('sBtn').innerText = "開始";
+                const nextMin = state.isRest ? document.getElementById('rMin').value : document.getElementById('pMin').value;
+                state.pomoInitialSec = nextMin * 60; state.sec = state.pomoInitialSec;
+                document.getElementById('sBtn').innerText = i18n[state.lang].sBtn;
             }
         }
         updateDisplay();
+    }
+
+    function manualSave() {
+        let dur = (state.mode === 'study') ? state.sec : (state.pomoInitialSec - state.sec);
+        if (dur > 0) { saveRecord(dur); resetTimer(); }
+    }
+
+    function saveRecord(duration) {
+        state.logs.unshift({ id: Date.now(), subject: document.getElementById('subj').value, duration: duration, date: new Date().toLocaleDateString() });
+        sync();
+    }
+
+    function resetTimer() {
+        clearInterval(state.timer); state.running = false; state.isRest = false;
+        if (state.mode === 'pomo') {
+            state.pomoInitialSec = document.getElementById('pMin').value * 60;
+            state.sec = state.pomoInitialSec;
+        } else { state.sec = 0; }
+        updateDisplay();
+        document.getElementById('sBtn').innerText = i18n[state.lang].sBtn;
     }
 
     function updateDisplay() {
@@ -183,42 +223,63 @@
         document.getElementById('tDisp').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
-    function manualSave() {
-        let dur = (state.mode === 'study') ? state.sec : (state.totalSetSec - state.sec);
-        if (dur > 5) {
-            state.logs.unshift({id:Date.now(), subject:document.getElementById('subj').value, duration:dur});
-            sync(); resetTimer();
-        }
-    }
-
-    function resetTimer() {
-        clearInterval(state.timer); state.running = false;
-        state.sec = (state.mode === 'pomo') ? document.getElementById('pMin').value * 60 : 0;
-        updateDisplay(); document.getElementById('sBtn').innerText = "開始";
-    }
-
     function render() {
+        const t = i18n[state.lang];
+        document.getElementById('userTag').innerText = "🔑 ID: " + userID;
+        document.getElementById('title_exams').innerText = t.title_exams;
+        document.getElementById('btn_add_ev').innerText = t.btn_add_ev;
+        document.getElementById('evName').placeholder = t.ev_placeholder;
+        document.getElementById('title_goals').innerText = t.title_goals;
+        document.getElementById('btn_set_goal').innerText = t.btn_set_goal;
+        document.getElementById('goalHourInput').placeholder = t.goal_hr_placeholder;
+        document.getElementById('title_timer').innerText = t.title_timer;
+        document.getElementById('mStudy').innerText = t.mStudy;
+        document.getElementById('mPomo').innerText = t.mPomo;
+        document.getElementById('txt_focus').innerText = t.txt_focus;
+        document.getElementById('txt_rest').innerText = t.txt_rest;
+        document.getElementById('txt_min').innerText = t.txt_min;
+        document.getElementById('txt_min2').innerText = t.txt_min2;
+        document.getElementById('btn_save').innerText = t.btn_save;
+        document.getElementById('btn_reset').innerText = t.btn_reset;
+        document.getElementById('title_stats').innerText = t.title_stats;
+        document.getElementById('table_head').innerHTML = t.table_head;
+        document.getElementById('title_logs').innerText = t.title_logs;
+        document.getElementById('newSubName').placeholder = t.sub_placeholder;
+        if(!state.running) document.getElementById('sBtn').innerText = t.sBtn;
+
         const today = new Date().setHours(0,0,0,0);
+        const curWeekStart = new Date(); curWeekStart.setDate(curWeekStart.getDate() - curWeekStart.getDay()); curWeekStart.setHours(0,0,0,0);
+
         document.getElementById('evList').innerHTML = state.evs.map(ev => `
-            <div class="item"><span>${ev.n}</span><span>剩 ${Math.ceil((new Date(ev.d)-today)/86400000)}天 <span onclick="delEv(${ev.id})" style="cursor:pointer;color:red">✕</span></span></div>
+            <div class="item"><span>${ev.n}</span><span>${t.left} ${Math.ceil((new Date(ev.d)-today)/86400000)} ${t.day} <span style="color:red;cursor:pointer" onclick="delEv(${ev.id})">✕</span></span></div>
         `).join('');
-        document.getElementById('logList').innerHTML = state.logs.slice(0,10).map(l => `
-            <div class="item"><span><span class="tag">${l.subject}</span> ${Math.floor(l.duration/60)}分${l.duration%60}秒</span><span onclick="delLog(${l.id})" style="cursor:pointer;color:red">✕</span></div>
-        `).join('');
-        document.getElementById('subGroup').innerHTML = state.subs.map(s => `
-            <div class="sub-tag">
-                <span onclick="document.getElementById('subj').value='${s}'">${s}</span>
-                <span class="sub-del" onclick="event.stopPropagation(); delSub('${s}')">×</span>
-            </div>
-        `).join('');
+
+        document.getElementById('subGroup').innerHTML = state.subs.map(s => `<div class="sub-tag"><span onclick="document.getElementById('subj').value='${s}'">${s}</span><span style="margin-left:5px;color:red" onclick="delSub('${s}')">×</span></div>`).join('');
+        document.getElementById('goalSubSelect').innerHTML = state.subs.map(s => `<option value="${s}">${s}</option>`).join('');
+
+        let weekTotalSec = 0; const weekStats = {};
+        document.getElementById('logList').innerHTML = state.logs.map(l => {
+            if (new Date(l.date) >= curWeekStart) { weekStats[l.subject] = (weekStats[l.subject] || 0) + l.duration; weekTotalSec += l.duration; }
+            return `<div class="item"><span><b>[${l.subject}]</b> ${Math.floor(l.duration/60)}m ${l.duration%60}s (${l.date})</span><span style="color:red;cursor:pointer" onclick="delLog(${l.id})">✕</span></div>`;
+        }).join('');
+
+        document.getElementById('statBody').innerHTML = Object.keys(weekStats).map(s => `
+            <tr><td>${s}</td><td>${Math.floor(weekStats[s]/3600)}h ${Math.floor((weekStats[s]%3600)/60)}m</td><td>${((weekStats[s]/weekTotalSec)*100).toFixed(1)}%</td></tr>
+        `).join('') || `<tr><td colspan="3">${t.no_data}</td></tr>`;
+
+        document.getElementById('goalList').innerHTML = state.goals.map(g => {
+            const done = weekStats[g.sub] || 0; const target = g.hour * 3600;
+            return `<div class="goal-item"><b>🎯 ${g.sub}</b><br>${t.done}: ${Math.floor(done/3600)}h ${Math.floor((done%3600)/60)}m | ${t.remain}: <span style="color:var(--secondary)">${Math.floor(Math.max(0,target-done)/3600)}h ${Math.floor((Math.max(0,target-done)%3600)/60)}m</span><span style="float:right;cursor:pointer" onclick="delGoal('${g.sub}')">✕</span></div>`;
+        }).join('');
     }
 
-    function addEv() {
-        const n = document.getElementById('evName').value, d = document.getElementById('evDate').value;
-        if(n && d) { state.evs.push({id:Date.now(), n, d}); sync(); }
-    }
+    function addSub() { const n = document.getElementById('newSubName').value.trim(); if(n && !state.subs.includes(n)) { state.subs.push(n); document.getElementById('newSubName').value=''; sync(); } }
+    function delSub(name) { if(confirm("Delete?")) { state.subs = state.subs.filter(s => s !== name); state.goals = state.goals.filter(g => g.sub !== name); sync(); } }
+    function addEv() { const n = document.getElementById('evName').value, d = document.getElementById('evDate').value; if(n && d) { state.evs.push({id:Date.now(), n, d}); sync(); } }
     function delEv(id) { state.evs = state.evs.filter(e => e.id !== id); sync(); }
-    function delLog(id) { state.logs = state.logs.filter(l => l.id !== id); sync(); }
+    function delLog(id) { if(confirm("Delete?")) { state.logs = state.logs.filter(l => l.id !== id); sync(); } }
+    function addGoal() { const sub = document.getElementById('goalSubSelect').value, hr = parseFloat(document.getElementById('goalHourInput').value); if(sub && hr>0) { state.goals = state.goals.filter(g => g.sub !== sub); state.goals.push({sub, hour:hr}); sync(); } }
+    function delGoal(sub) { state.goals = state.goals.filter(g => g.sub !== sub); sync(); }
 
     loadData();
 </script>
