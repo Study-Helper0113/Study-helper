@@ -2,59 +2,77 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>讀書助手 - 帳號安全版</title>
+    <title>讀書助手 - 專屬雲端旗艦版</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    
     <style>
         :root { --primary: #5dade2; --secondary: #f39c12; --danger: #e74c3c; --success: #27ae60; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333; --input-bg: #2a2a2a; }
         body.light-mode { --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; --border: #ddd; --input-bg: #f9f9f9; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); max-width: 500px; margin: auto; padding: 15px; }
-        .container { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        .auth-section { text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 20px; }
-        .main-app { display: none; } /* 未登入時隱藏 */
-        h2 { border-left: 5px solid var(--primary); padding-left: 10px; font-size: 1.1rem; margin: 25px 0 10px; color: var(--primary); }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); max-width: 500px; margin: auto; padding: 15px; transition: 0.3s; }
+        .container { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .user-id-tag { font-size: 0.7rem; background: #333; color: var(--primary); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--primary); }
+        h2 { border-left: 5px solid var(--primary); padding-left: 10px; font-size: 1.1rem; margin: 20px 0 10px; color: var(--primary); }
         .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
-        input { padding: 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); flex: 1; outline: none; }
-        button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .timer-display { font-size: 3.5rem; text-align: center; font-family: monospace; font-weight: bold; margin: 15px 0; color: var(--primary); }
-        .list-container { border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.2); margin-bottom: 15px; }
-        .item { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        input { padding: 10px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); flex: 1; outline: none; }
+        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .timer-box { text-align: center; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .timer-display { font-size: 3.5rem; font-family: monospace; font-weight: bold; margin: 10px 0; color: var(--primary); }
+        .sub-btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center; }
+        .sub-tag { display: flex; align-items: center; background: #333; color: #eee; border-radius: 20px; padding: 2px 12px; font-size: 0.8rem; cursor: pointer; border: 1px solid transparent; }
+        .sub-tag:hover { border-color: var(--primary); }
+        .sub-del { margin-left: 8px; color: var(--danger); font-weight: bold; font-size: 1.1rem; }
+        .list-container { border: 1px solid var(--border); border-radius: 10px; background: rgba(0,0,0,0.2); margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
+        .item { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
         .tag { background: var(--primary); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="loginArea" class="auth-section">
-        <h3>🔑 請登入以使用雲端同步</h3>
-        <button onclick="login()" style="background:#4285F4; color:white; width:100%;">使用 Google 帳號登入</button>
+    <div class="user-info">
+        <span id="userTag" class="user-id-tag">🔑 空間載入中...</span>
+        <button onclick="document.body.classList.toggle('light-mode')" style="font-size:0.7rem; background:#444; color:#fff;">🌓 模式</button>
     </div>
+    
+    <h1 style="font-size:1.3rem; margin:0; color:var(--primary);">讀書助手 Cloud Pro</h1>
 
-    <div id="mainApp" class="main-app">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div id="userInfo" style="font-size:0.8rem; color:#888;">正在載入...</div>
-            <button onclick="logout()" style="font-size:0.7rem; background:#444; color:#fff;">登出</button>
+    <h2>📅 考試倒數</h2>
+    <div class="input-group">
+        <input type="text" id="evName" placeholder="考試名稱">
+        <input type="date" id="evDate">
+        <button style="background:var(--primary); color:#000" onclick="addEv()">新增</button>
+    </div>
+    <div id="evList" class="list-container"></div>
+
+    <h2>⏱️ 專注計時</h2>
+    <div class="timer-box">
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <button id="mStudy" style="flex:1; background:var(--primary); color:#000;" onclick="setMode('study')">普通計時</button>
+            <button id="mPomo" style="flex:1; background:#444; color:#fff;" onclick="setMode('pomo')">番茄鐘</button>
         </div>
-
-        <h2>📅 考試倒數</h2>
-        <div class="input-group">
-            <input type="text" id="evName" placeholder="考試名稱">
-            <input type="date" id="evDate">
-            <button style="background:var(--primary); color:#000" onclick="addEv()">新增</button>
-        </div>
-        <div id="evList" class="list-container"></div>
-
-        <h2>⏱️ 專注計時器</h2>
         <div class="timer-display" id="tDisp">00:00:00</div>
+        
+        <div id="pomoSet" style="display:none; margin-bottom:15px; font-size:0.8rem;">
+            專注 <input type="number" id="pMin" value="25" style="width:45px;"> 分 | 
+            休息 <input type="number" id="rMin" value="5" style="width:45px;"> 分
+        </div>
+
+        <div class="sub-btn-group" id="subGroup"></div>
+        <div class="input-group" style="margin-bottom:15px;">
+            <input type="text" id="newSubName" placeholder="新增自定義科目...">
+            <button onclick="addSub()" style="background:#555; color:white;">＋</button>
+        </div>
+
         <div class="input-group">
             <input type="text" id="subj" value="自主學習">
             <button id="sBtn" onclick="toggleTimer()" style="background:var(--success); color:white; flex:2;">開始</button>
             <button onclick="manualSave()" style="background:var(--secondary); color:white; flex:1;">儲存</button>
         </div>
-        <div id="logList" class="list-container"></div>
     </div>
+
+    <h2>📊 學習紀錄</h2>
+    <div id="logList" class="list-container"></div>
 </div>
 
 <script>
@@ -69,62 +87,129 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.database();
 
-    let state = { evs: [], logs: [], sec: 0, running: false, timer: null, user: null };
+    // 取得網址 ID
+    const urlParams = new URLSearchParams(window.location.search);
+    let userID = urlParams.get('id') || "public_space";
+    document.getElementById('userTag').innerText = "🔑 空間 ID: " + userID;
 
-    // --- 登入邏輯 ---
-    function login() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider);
-    }
+    let state = {
+        evs: [], logs: [], subs: ["自主學習", "數學", "英文"],
+        sec: 0, running: false, timer: null, mode: 'study', isRest: false, totalSetSec: 0
+    };
 
-    function logout() { auth.signOut(); location.reload(); }
-
-    // 監聽登入狀態
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            state.user = user;
-            document.getElementById('loginArea').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            document.getElementById('userInfo').innerText = "👤 " + user.displayName;
-            loadData();
-        } else {
-            document.getElementById('loginArea').style.display = 'block';
-            document.getElementById('mainApp').style.display = 'none';
-        }
-    });
-
-    // --- 資料同步邏輯 (針對個人路徑) ---
     function loadData() {
-        // 資料儲存路徑：users/你的UID/study_data
-        db.ref('users/' + state.user.uid + '/study_data').on('value', snap => {
+        db.ref('users_data/' + userID).on('value', (snap) => {
             const data = snap.val();
             if (data) {
                 state.evs = data.evs || [];
                 state.logs = data.logs || [];
+                state.subs = data.subs || ["自主學習", "數學", "英文"];
                 render();
             }
         });
     }
 
     function sync() {
-        if (!state.user) return;
-        db.ref('users/' + state.user.uid + '/study_data').set({
-            evs: state.evs,
-            logs: state.logs
+        db.ref('users_data/' + userID).set({
+            evs: state.evs, logs: state.logs, subs: state.subs
         });
     }
 
-    // --- 以下功能邏輯與 V13 相同 ---
+    // 科目管理
+    function addSub() {
+        const name = document.getElementById('newSubName').value.trim();
+        if(name && !state.subs.includes(name)) {
+            state.subs.push(name);
+            document.getElementById('newSubName').value = '';
+            sync();
+        }
+    }
+    function delSub(name) {
+        if(confirm(`刪除「${name}」？`)) {
+            state.subs = state.subs.filter(s => s !== name);
+            sync();
+        }
+    }
+
+    // 計時邏輯
+    function setMode(m) {
+        if (state.running) return;
+        state.mode = m;
+        document.getElementById('mStudy').style.background = m === 'study' ? 'var(--primary)' : '#444';
+        document.getElementById('mPomo').style.background = m === 'pomo' ? 'var(--primary)' : '#444';
+        document.getElementById('pomoSet').style.display = m === 'pomo' ? 'block' : 'none';
+        resetTimer();
+    }
+
+    function toggleTimer() {
+        if (state.running) {
+            clearInterval(state.timer); state.running = false;
+            document.getElementById('sBtn').innerText = "繼續";
+        } else {
+            if (state.mode === 'pomo' && state.sec === 0) {
+                state.totalSetSec = document.getElementById('pMin').value * 60;
+                state.sec = state.totalSetSec;
+            }
+            state.running = true;
+            document.getElementById('sBtn').innerText = "暫停";
+            state.timer = setInterval(tick, 1000);
+        }
+    }
+
+    function tick() {
+        if (state.mode === 'study') state.sec++;
+        else {
+            state.sec--;
+            if (state.sec <= 0) {
+                clearInterval(state.timer); state.running = false;
+                alert(state.isRest ? "休息結束！" : "專注結束！");
+                if (!state.isRest) {
+                    state.logs.unshift({id:Date.now(), subject:document.getElementById('subj').value, duration:state.totalSetSec});
+                    sync();
+                }
+                state.isRest = !state.isRest;
+                state.totalSetSec = (state.isRest ? document.getElementById('rMin').value : document.getElementById('pMin').value) * 60;
+                state.sec = state.totalSetSec;
+                document.getElementById('sBtn').innerText = "開始";
+            }
+        }
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        const h = Math.floor(state.sec/3600), m = Math.floor((state.sec%3600)/60), s = state.sec%60;
+        document.getElementById('tDisp').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
+    function manualSave() {
+        let dur = (state.mode === 'study') ? state.sec : (state.totalSetSec - state.sec);
+        if (dur > 5) {
+            state.logs.unshift({id:Date.now(), subject:document.getElementById('subj').value, duration:dur});
+            sync(); resetTimer();
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(state.timer); state.running = false;
+        state.sec = (state.mode === 'pomo') ? document.getElementById('pMin').value * 60 : 0;
+        updateDisplay(); document.getElementById('sBtn').innerText = "開始";
+    }
+
     function render() {
         const today = new Date().setHours(0,0,0,0);
         document.getElementById('evList').innerHTML = state.evs.map(ev => `
             <div class="item"><span>${ev.n}</span><span>剩 ${Math.ceil((new Date(ev.d)-today)/86400000)}天 <span onclick="delEv(${ev.id})" style="cursor:pointer;color:red">✕</span></span></div>
         `).join('');
-        document.getElementById('logList').innerHTML = state.logs.slice(0,5).map(l => `
-            <div class="item"><span><span class="tag">${l.subject}</span> ${Math.floor(l.duration/60)}分</span></div>
+        document.getElementById('logList').innerHTML = state.logs.slice(0,10).map(l => `
+            <div class="item"><span><span class="tag">${l.subject}</span> ${Math.floor(l.duration/60)}分${l.duration%60}秒</span><span onclick="delLog(${l.id})" style="cursor:pointer;color:red">✕</span></div>
+        `).join('');
+        document.getElementById('subGroup').innerHTML = state.subs.map(s => `
+            <div class="sub-tag">
+                <span onclick="document.getElementById('subj').value='${s}'">${s}</span>
+                <span class="sub-del" onclick="event.stopPropagation(); delSub('${s}')">×</span>
+            </div>
         `).join('');
     }
 
@@ -133,30 +218,9 @@
         if(n && d) { state.evs.push({id:Date.now(), n, d}); sync(); }
     }
     function delEv(id) { state.evs = state.evs.filter(e => e.id !== id); sync(); }
+    function delLog(id) { state.logs = state.logs.filter(l => l.id !== id); sync(); }
 
-    function toggleTimer() {
-        if (state.running) {
-            clearInterval(state.timer); state.running = false;
-            document.getElementById('sBtn').innerText = "開始";
-        } else {
-            state.running = true;
-            document.getElementById('sBtn').innerText = "暫停";
-            state.timer = setInterval(() => {
-                state.sec++;
-                document.getElementById('tDisp').innerText = new Date(state.sec * 1000).toISOString().substr(11, 8);
-            }, 1000);
-        }
-    }
-
-    function manualSave() {
-        if(state.sec > 0) {
-            state.logs.unshift({id:Date.now(), subject:document.getElementById('subj').value, duration:state.sec});
-            state.sec = 0; clearInterval(state.timer); state.running = false;
-            document.getElementById('tDisp').innerText = "00:00:00";
-            document.getElementById('sBtn').innerText = "開始";
-            sync();
-        }
-    }
+    loadData();
 </script>
 </body>
 </html>
