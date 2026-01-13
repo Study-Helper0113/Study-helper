@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Helper - V14.3</title>
+    <title>Study Helper - V14.4</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     <style>
@@ -12,7 +12,7 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); max-width: 500px; margin: auto; padding: 15px; transition: 0.3s; }
         .container { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        /* --- 核心修正：ID 展開動畫 CSS --- */
+        /* ID 展開動畫 */
         .user-badge { 
             display: inline-flex; align-items: center; 
             font-size: 0.75rem; background: rgba(93, 173, 226, 0.15); 
@@ -20,11 +20,9 @@
             border: 1px solid var(--primary); cursor: pointer;
             overflow: hidden; white-space: nowrap;
             transition: max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s;
-            max-width: 36px; /* 預設只看得到鑰匙 */
+            max-width: 36px;
         }
-        .user-badge.expanded {
-            max-width: 400px; /* 展開後的寬度 */
-        }
+        .user-badge.expanded { max-width: 400px; }
         .id-text { margin-left: 8px; opacity: 0; transition: opacity 0.3s; display: inline-block; }
         .expanded .id-text { opacity: 1; }
 
@@ -116,6 +114,7 @@
 </div>
 
 <script>
+    // Firebase 初始化
     const firebaseConfig = {
         apiKey: "AIzaSyAFgzkCDZLmrCQJ0h7NGl17S_d9joRZoPY",
         authDomain: "study-helper-d6815.firebaseapp.com",
@@ -129,10 +128,13 @@
     const db = firebase.database();
     const userID = new URLSearchParams(window.location.search).get('id') || "public_space";
     
+    // 狀態管理
     let state = { evs: [], logs: [], subs: [], goals: [], sec: 0, running: false, timer: null, mode: 'study', isRest: false, pomoInitialSec: 0, lang: 'tw' };
     let expandTimer = null;
+    let startTime = null; 
+    let accumulatedSec = 0;
 
-    // 展開 ID 顯示
+    // UI 交互
     function expandID() {
         const badge = document.getElementById('userBadge');
         badge.classList.add('expanded');
@@ -140,10 +142,9 @@
         expandTimer = setTimeout(() => badge.classList.remove('expanded'), 10000);
     }
 
-    // 修正：彈出輸入框功能
     function promptID() {
         const msg = i18n[state.lang].prompt_id;
-        const newID = window.prompt(msg, userID); // 使用 window.prompt 確保呼叫
+        const newID = window.prompt(msg, userID);
         if (newID !== null && newID.trim() !== "" && newID !== userID) {
             window.location.href = window.location.pathname + '?id=' + encodeURIComponent(newID.trim());
         }
@@ -194,6 +195,7 @@
         const min = state.isRest ? document.getElementById('rMin').value : document.getElementById('pMin').value;
         state.pomoInitialSec = min * 60;
         state.sec = state.pomoInitialSec;
+        accumulatedSec = state.sec;
         updateDisplay();
     }
 
@@ -206,25 +208,33 @@
         resetTimer();
     }
 
+    // 核心計時邏輯 (時間差計算)
     function toggleTimer() {
         if (state.running) {
-            clearInterval(state.timer); state.running = false;
+            clearInterval(state.timer); 
+            state.running = false;
+            accumulatedSec = state.sec; 
             document.getElementById('sBtn').innerText = i18n[state.lang].sBtn_cont;
         } else {
-            if (state.mode === 'pomo' && (state.sec === 0 || state.pomoInitialSec === 0)) syncPomoInput();
+            if (state.mode === 'pomo' && state.sec === 0) syncPomoInput();
+            startTime = Date.now(); 
+            accumulatedSec = state.sec;
             state.running = true;
             document.getElementById('sBtn').innerText = i18n[state.lang].sBtn_pause;
-            state.timer = setInterval(tick, 1000);
+            state.timer = setInterval(tick, 200);
         }
     }
 
     function tick() {
-        if (state.mode === 'study') { state.sec++; } 
-        else {
-            state.sec--;
+        const now = Date.now();
+        const diffSec = Math.floor((now - startTime) / 1000);
+        if (state.mode === 'study') {
+            state.sec = accumulatedSec + diffSec;
+        } else {
+            state.sec = accumulatedSec - diffSec;
             if (state.sec <= 0) {
-                clearInterval(state.timer); state.running = false;
-                if (!state.isRest) { saveRecord(state.pomoInitialSec); alert("Done!"); }
+                state.sec = 0; clearInterval(state.timer); state.running = false;
+                if (!state.isRest) { saveRecord(state.pomoInitialSec); alert("Focus End!"); }
                 state.isRest = !state.isRest;
                 const nextMin = state.isRest ? document.getElementById('rMin').value : document.getElementById('pMin').value;
                 state.pomoInitialSec = nextMin * 60; state.sec = state.pomoInitialSec;
@@ -245,17 +255,19 @@
     }
 
     function resetTimer() {
-        clearInterval(state.timer); state.running = false; state.isRest = false;
+        clearInterval(state.timer); state.running = false; state.isRest = false; startTime = null;
         if (state.mode === 'pomo') {
             state.pomoInitialSec = document.getElementById('pMin').value * 60;
             state.sec = state.pomoInitialSec;
         } else { state.sec = 0; }
+        accumulatedSec = state.sec;
         updateDisplay();
         document.getElementById('sBtn').innerText = i18n[state.lang].sBtn;
     }
 
     function updateDisplay() {
-        const h = Math.floor(state.sec/3600), m = Math.floor((state.sec%3600)/60), s = state.sec%60;
+        const absSec = Math.abs(state.sec);
+        const h = Math.floor(absSec/3600), m = Math.floor((absSec%3600)/60), s = absSec%60;
         document.getElementById('tDisp').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
 
@@ -282,7 +294,7 @@
         document.getElementById('title_logs').innerText = t.title_logs;
         document.getElementById('newSubName').placeholder = t.sub_placeholder;
         document.getElementById('txt_change_id').innerText = t.txt_change_id;
-        if(!state.running) document.getElementById('sBtn').innerText = t.sBtn;
+        if(!state.running) document.getElementById('sBtn').innerText = (state.sec > 0 && state.mode==='study') ? t.sBtn_cont : t.sBtn;
 
         const today = new Date().setHours(0,0,0,0);
         const curWeekStart = new Date(); curWeekStart.setDate(curWeekStart.getDate() - curWeekStart.getDay()); curWeekStart.setHours(0,0,0,0);
